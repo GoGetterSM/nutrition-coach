@@ -1,3 +1,6 @@
+import json
+from datetime import date
+
 foods = {
     "Premier Protein Shake": {
         "protein": 30,
@@ -14,6 +17,8 @@ foods = {
     }
 }
 
+DAILY_LOG_FILE = "daily_log.json"
+
 class NutritionCoach:
 
     def __init__(self):
@@ -25,6 +30,20 @@ class NutritionCoach:
         self.consumed_carbs = 0
         self.consumed_fat = 0
         self.consumed_calories = 0
+        self.load_daily_log()
+
+    def load_daily_log(self):
+        try:
+            with open(DAILY_LOG_FILE) as f:
+                data = json.load(f)
+            if data.get("date") != date.today().isoformat():
+                return
+            self.consumed_protein = data["consumed_protein"]
+            self.consumed_carbs = data["consumed_carbs"]
+            self.consumed_fat = data["consumed_fat"]
+            self.consumed_calories = data["consumed_calories"]
+        except (FileNotFoundError, json.JSONDecodeError, KeyError, TypeError):
+            pass
 
     def show_totals(self, final=False):
         label = "Final totals" if final else "Today's totals"
@@ -33,6 +52,17 @@ class NutritionCoach:
         print(f"Carbs:    {self.consumed_carbs}g / {self.carbs}g")
         print(f"Fat:      {self.consumed_fat}g / {self.fat}g")
         print(f"Calories: {self.consumed_calories} / {self.calories}")
+
+    def save_daily_log(self):
+        data = {
+            "date": date.today().isoformat(),
+            "consumed_protein": self.consumed_protein,
+            "consumed_carbs": self.consumed_carbs,
+            "consumed_fat": self.consumed_fat,
+            "consumed_calories": self.consumed_calories,
+        }
+        with open(DAILY_LOG_FILE, "w") as f:
+            json.dump(data, f, indent=2)
 
     def greet(self):
         print("=" * 40)
@@ -62,6 +92,7 @@ class NutritionCoach:
                 self.consumed_carbs += food['carbs']
                 self.consumed_fat += food['fat']
                 self.consumed_calories += food['calories']
+                self.save_daily_log()
                 self.show_totals()
             else:
                 print("Food not found.")
